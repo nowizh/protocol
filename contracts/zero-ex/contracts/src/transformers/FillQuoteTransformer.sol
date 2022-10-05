@@ -221,7 +221,6 @@ contract FillQuoteTransformer is
         }
         
         state.ethRemaining = address(this).balance;
-
         // Fill the orders.
         for (uint256 i = 0; i < data.fillSequence.length; ++i) {
             // Check if we've hit our targets.

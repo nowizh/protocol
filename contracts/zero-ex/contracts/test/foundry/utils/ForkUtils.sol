@@ -28,11 +28,21 @@ import "src/transformers/WethTransformer.sol";
 import "src/transformers/FillQuoteTransformer.sol";
 import "@0x/contracts-erc20/contracts/src/v06/IEtherTokenV06.sol";
 import "@0x/contracts-erc20/contracts/src/v06/IERC20TokenV06.sol";
+import "src/transformers/bridges/BridgeProtocols.sol";
+import "src/transformers/bridges/EthereumBridgeAdapter.sol";
+import "src/transformers/bridges/PolygonBridgeAdapter.sol";
+import "src/transformers/bridges/BSCBridgeAdapter.sol";
+import "src/transformers/bridges/ArbitrumBridgeAdapter.sol";
+import "src/transformers/bridges/OptimismBridgeAdapter.sol";
+import "src/transformers/bridges/AvalancheBridgeAdapter.sol";
+import "src/transformers/bridges/FantomBridgeAdapter.sol";
+import "src/transformers/bridges/CeloBridgeAdapter.sol";
 import "src/IZeroEx.sol";
 
 //contract-addresses/addresses.json interfaces
 //need to be alphebetized in solidity but not in addresses.json
 struct Addresses {
+    address affiliateFeeTransformer;
     address erc20BridgeProxy;
     address erc20BridgeSampler;
     address etherToken;
@@ -41,21 +51,16 @@ struct Addresses {
     address exchangeProxyGovernor;
     address exchangeProxyLiquidityProviderSandbox;
     address exchangeProxyTransformerDeployer;
+    address fillQuoteTransformer;
+    address payTakerTransformer;
+    address positiveSlippageFeeTransformer;
     address staking;
     address stakingProxy;
-    TransformerAddresses transformers;
+    address wethTransformer;
     address zeroExGovernor;
     address zrxToken;
     address zrxTreasury;
     address zrxVault;
-}
-
-struct TransformerAddresses {
-    address affiliateFeeTransformer;
-    address fillQuoteTransformer;
-    address payTakerTransformer;
-    address positiveSlippageFeeTransformer;
-    address wethTransformer;
 }
 
 struct TokenAddresses {
@@ -144,24 +149,59 @@ contract ForkUtils is Test {
       //log_named_address("WETH/NATIVE_ASSET", address(tokens.WrappedNativeToken));
   }
 
-    
-    // function label(Addresses memory addresses) public {
+  function createBridgeAdapter(IEtherTokenV06 weth) public returns(IBridgeAdapter bridgeAdapter) {
+    uint chainId;
 
-    //     vm.label(address(addresses.exchangeProxy), "ZeroEx: ExchangeProxy");
-    //     vm.label(address(addresses.transformers.wethTransformer), "WethTransformer");
-    //     vm.label(address(IFQT(addresses.transformers.fillQuoteTransformer).bridgeAdapter()), "Bridge Adapter");
-    //     //vm.label(address(addresses.transformers.fillQuoteTransformer), "FillQuoteTransformer");
-    //     // /log_named_address("Bridge Adapter", address(FillQuoteTransformer(addresses.transformers.fillQuoteTransformer).bridgeAdapter()));
-    //     //vm.label(address(), "BridgeAdapter");
-    //     //vm.label(address(IZeroEx(addresses.exchangeProxy).getTransformWallet()), "FlashWallet");
-    //   }
-    
-
-    modifier onlyForked() {
-        if (block.number >= 15000000) {
-            _;
-        } else {
-            emit log_string("Requires fork mode, skipping");
-        }
+    assembly {
+      chainId := chainid()
     }
+    if(chainId == 1) {return IBridgeAdapter(new EthereumBridgeAdapter(weth));}
+    else if( chainId == 56){ return IBridgeAdapter(new BSCBridgeAdapter(weth));}
+    else if( chainId == 137){return IBridgeAdapter(new PolygonBridgeAdapter(weth));}
+    else if( chainId == 43114){return IBridgeAdapter(new AvalancheBridgeAdapter(weth));}
+    else if( chainId == 250){return IBridgeAdapter(new FantomBridgeAdapter(weth));}
+    else if( chainId == 10){return IBridgeAdapter(new OptimismBridgeAdapter(weth));}
+    else if( chainId == 42161){return IBridgeAdapter(new ArbitrumBridgeAdapter(weth));}
+  }
+
+  function labelAddresses(string memory chainName, string memory chainId, TokenAddresses memory tokens, Addresses memory addresses, LiquiditySources memory sources) public {
+    log_named_string("   Using contract addresses on chain",chainName);
+    // log_named_address("     zeroEx/exchangeProxy",addresses.exchangeProxy);
+    // log_named_address("     zeroEx/fillQuoteTransformer",addresses.fillQuoteTransformer);
+    // log_named_address("     zeroEx/payTakerTransformer",addresses.payTakerTransformer);
+    // log_named_address("     zeroEx/positiveSlippageFeeTransformer",addresses.positiveSlippageFeeTransformer);
+    // log_named_address("     zeroEx/wethTransformer",addresses.wethTransformer);
+    // vm.label(addresses.affiliateFeeTransformer, "zeroEx/affiliateFeeTransformer");
+    vm.label(addresses.erc20BridgeProxy, "zeroEx/erc20BridgeProxy");
+    vm.label(addresses.erc20BridgeSampler, "zeroEx/erc20BridgeSampler");
+    vm.label(addresses.etherToken, "zeroEx/etherToken");
+    vm.label(addresses.exchangeProxy, "zeroEx/exchangeProxy");
+    vm.label(addresses.exchangeProxyFlashWallet, "zeroEx/exchangeProxyFlashWallet");
+    vm.label(addresses.exchangeProxyGovernor, "zeroEx/exchangeProxyGovernor");
+    vm.label(addresses.exchangeProxyLiquidityProviderSandbox, "zeroEx/exchangeProxyLiquidityProviderSandbox");
+    vm.label(addresses.exchangeProxyTransformerDeployer, "zeroEx/exchangeProxyTransformerDeployer");
+    vm.label(addresses.fillQuoteTransformer, "zeroEx/fillQuoteTransformer");
+    vm.label(addresses.payTakerTransformer, "zeroEx/payTakerTransformer");
+    vm.label(addresses.positiveSlippageFeeTransformer, "zeroEx/positiveSlippageFeeTransformer");
+    vm.label(addresses.staking, "zeroEx/staking");
+    vm.label(addresses.stakingProxy, "zeroEx/stakingProxy");
+    vm.label(addresses.wethTransformer, "zeroEx/wethTransformer");
+    vm.label(addresses.zeroExGovernor, "zeroEx/zeroExGovernor");
+    vm.label(addresses.zrxToken, "zeroEx/zrxToken");
+    vm.label(addresses.zrxTreasury, "zeroEx/zrxTreasury");
+    vm.label(addresses.zrxVault, "zeroEx/zrxVault");
+    vm.label(address(tokens.WrappedNativeToken), "WrappedNativeToken");
+    vm.label(address(tokens.USDT), "USDT");
+    vm.label(address(tokens.USDC), "USDC");
+    vm.label(address(tokens.DAI), "DAI");
+    vm.label(address(sources.UniswapV2Router), "UniswapRouter");
+  }
+
+  modifier onlyForked() {
+      if (block.number >= 15000000) {
+          _;
+      } else {
+          emit log_string("Requires fork mode, skipping");
+      }
+  }
 }
