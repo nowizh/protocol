@@ -8,12 +8,14 @@ remappings = [
     '@0x/contracts-erc20/=../erc20/',
     'src/=./contracts/src',
     '@0x/contract-addresses/=../../packages/contract-addresses',
-    'samplers/=./contracts/src/sampler'
+    'samplers/=./contracts/src/sampler',
 ]
 cache_path = 'foundry-cache'
 optimizer_runs = 1000000
-fs_permissions = [{ access = "read-write", path = "./contracts/test/foundry/addresses"}]
-
+fs_permissions = [
+    { access = "read-write", path = "./contracts/test/foundry/addresses" },
+]
+verbosity = 3
 #these rpc's are publicly available on rpc.info not internal rpcs
 [rpc_endpoints]
 arbitrum = "https://rpc.ankr.com/arbitrum"

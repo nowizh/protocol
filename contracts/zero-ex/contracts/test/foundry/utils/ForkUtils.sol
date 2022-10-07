@@ -83,6 +83,11 @@ contract ForkUtils is Test {
     //forked providers for each chain
     mapping(string => uint256) public forkIds;
 
+    IZeroEx IZERO_EX;
+
+    IBridgeAdapter bridgeAdapter;
+    FillQuoteTransformer fillQuoteTransformer;
+
     TokenAddresses tokens;
     Addresses addresses;
     LiquiditySources sources;
@@ -106,8 +111,19 @@ contract ForkUtils is Test {
     function createForks() public returns (uint256[] memory) {
       for (uint256 i = 0; i < chains.length; i++) {
           forkIds[chains[i]] = vm.createFork(vm.rpcUrl(chains[i]), blockNumber[i]);
+          //forkIds[chains[i]] = vm.createFork(vm.rpcUrl(chains[i]), blockNumber[i]);
       }
     }
+    function getSigner() public returns (address, uint){
+      string memory mnemonic = "test test test test test test test test test test test junk";
+      uint256 privateKey = vm.deriveKey(mnemonic, 0);
+      
+      
+      vm.label(vm.addr(privateKey), "zeroEx/MarketMaker");
+      return (vm.addr(privateKey), privateKey);
+    }
+
+               
 
     function readLiquiditySourceAddresses() public returns (string memory) {
       string memory root = vm.projectRoot();
@@ -171,7 +187,7 @@ contract ForkUtils is Test {
     // log_named_address("     zeroEx/payTakerTransformer",addresses.payTakerTransformer);
     // log_named_address("     zeroEx/positiveSlippageFeeTransformer",addresses.positiveSlippageFeeTransformer);
     // log_named_address("     zeroEx/wethTransformer",addresses.wethTransformer);
-    // vm.label(addresses.affiliateFeeTransformer, "zeroEx/affiliateFeeTransformer");
+    vm.label(addresses.affiliateFeeTransformer, "zeroEx/affiliateFeeTransformer");
     vm.label(addresses.erc20BridgeProxy, "zeroEx/erc20BridgeProxy");
     vm.label(addresses.erc20BridgeSampler, "zeroEx/erc20BridgeSampler");
     vm.label(addresses.etherToken, "zeroEx/etherToken");
